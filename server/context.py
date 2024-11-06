@@ -110,10 +110,19 @@ class GlobalContext:
         return result
 
     def known_bots(self) -> int:
+        """
+        Gets the total number of bots that the server is aware of
+        """
         return len(self._known_bots)
 
     def commands_given(self) -> int:
+        """
+        Gets the total number of commands that have been queued
+        """
         return self._commands_given
 
     def commands_executed(self) -> int:
+        """
+        Gets the total number of commands that have been 'dispensed' to bots
+        """
         return self._commands_executed

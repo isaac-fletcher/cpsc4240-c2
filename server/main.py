@@ -56,17 +56,31 @@ def server_status(ctx: GlobalContext) -> None:
 
 
 async def main():
+    # this runs the web server as a "background task" effectively
+    # within asyncio, allowing us to still do stuff in the 'foreground'
+    # while the web server is going.
+    #
+    # this is necessary for the user input code below
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, 'localhost', 8080)
     await site.start()
 
+    # note: the type hint is for my editor's autocomplete
     ctx: GlobalContext = app["ctx"]
 
     while True:
-        # await asyncio.sleep(600000000)
-
         text: str = await aioconsole.ainput("> ")
+
+        # shlex is a Python built-in library that effectively "splits a string
+        # the way that `sh` would".
+        #
+        # The reason I use this is so you can type things via. string literals
+        # and have them maintained, e.g. you can input the following:
+        #
+        #    > all execute /usr/bin/bash -c "echo 'Hello!' && echo 'Goodbye!'"
+        #
+        # and have `command` be ["all", "execute", "/usr/bin/bash", "-c", "echo 'Hello!' && echo 'Goodbye!'"]
         command = shlex.split(text)
 
         # one <id> <command>
@@ -85,6 +99,7 @@ async def main():
         except Exception as e:
             print(f"unable to run command '{text}'. reason:")
             print(f"    {repr(e)}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
