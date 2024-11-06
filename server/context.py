@@ -65,7 +65,9 @@ class GlobalContext:
         Creates a new bot with an empty command queue in the store, and
         returns an ID that uniquely identifies this new bot.
         """
-        while (new_id := _random_id()) in self._known_bots:
+        new_id = _random_id()
+
+        while new_id in self._known_bots:
             new_id = _random_id()
 
         self._known_bots[new_id] = deque()
