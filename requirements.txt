@@ -1,2 +1,3 @@
+pyinstaller
 aiohttp >= 3.10.0
 aioconsole >= 0.8.0
