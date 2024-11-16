@@ -6,7 +6,7 @@
 # ===---------------------------------------------------------------------=== #
 
 import random
-from typing import Any
+from typing import Any, Iterable
 from collections import deque
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
@@ -26,8 +26,8 @@ class Command:
         return Command("read", file_path, [])
 
     @staticmethod
-    def write(file_path: str, data: str) -> "Command":
-        return Command("write", file_path, [data])
+    def write(file_path: str, data_base64: str) -> "Command":
+        return Command("write", file_path, [data_base64])
 
     @staticmethod
     def execute(interpreter: str, args: list[str]) -> "Command":
@@ -51,7 +51,7 @@ class GlobalContext:
     Manages the list of commands for each bot to execute, and keeps track
     of all known bots.
     """
-    _known_bots: dict[str, deque]
+    _known_bots: dict[str, tuple[deque, int]]
     _commands_given: int
     _commands_executed: int
 
@@ -70,7 +70,7 @@ class GlobalContext:
         while new_id in self._known_bots:
             new_id = _random_id()
 
-        self._known_bots[new_id] = deque()
+        self._known_bots[new_id] = (deque(), 0)
 
         return new_id
 
@@ -78,7 +78,7 @@ class GlobalContext:
         """
         Adds a command to the end of the command queue for every known bot.
         """
-        for queue in self._known_bots.values():
+        for queue, _ in self._known_bots.values():
             self._commands_given += 1
             queue.append(command)
 
@@ -88,7 +88,7 @@ class GlobalContext:
         """
         if id in self._known_bots:
             self._commands_given += 1
-            self._known_bots[id].append(command)
+            self._known_bots[id][0].append(command)
 
             return True
 
@@ -103,7 +103,7 @@ class GlobalContext:
             return None
 
         result = []
-        queue = self._known_bots[id]
+        queue = self._known_bots[id][0]
 
         while len(queue) != 0:
             self._commands_executed += 1
@@ -111,11 +111,28 @@ class GlobalContext:
 
         return result
 
+    def received_result_for(self, id: str) -> int:
+        """
+        Increments the result counter for `id`, and returns the old value.
+
+        This provides a way of distinguishing between the results for each command.
+        """
+        queue, old_count = self._known_bots[id]
+        self._known_bots[id] = (queue, old_count + 1)
+
+        return old_count
+
     def known_bots(self) -> int:
         """
         Gets the total number of bots that the server is aware of
         """
         return len(self._known_bots)
+
+    def all_known_ids(self) -> Iterable[str]:
+        """
+        Gets an iterator over all the known bot IDs
+        """
+        return self._known_bots.keys()
 
     def commands_given(self) -> int:
         """
