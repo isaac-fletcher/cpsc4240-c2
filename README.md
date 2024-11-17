@@ -3,9 +3,24 @@
 ## How to set up environment
 
 ```bash
-$ python3 -m venv .venv
+$ python -m venv .venv
 $ source .venv/bin/activate
 $ pip install -r ./requirements.txt
+```
+
+## Running
+
+For the server, run `server/main.py` with an output directory specified. Any commands, reads and
+writes will write output to `/tmp/output-folder/<id>/<index>`.
+
+```bash
+(.venv) $ python ./server/main.py /tmp/output-folder 
+```
+
+For the client, just run `bot/main.py`
+
+```bash
+(.venv) $ python ./bot/main.py
 ```
 
 ## Notes on debugging
