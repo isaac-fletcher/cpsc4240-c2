@@ -73,7 +73,7 @@ async def execute_command(session: ClientSession, command: dict[str, Any]) -> No
         elif command["action"] == "write":
             result = await write_file(command)
         else:
-            result = f"unknown action: {command["action"]}".encode()
+            result = f"unknown action: {command['action']}".encode()
 
     except Exception as e:
         result = f"exception in parsing command: {e}".encode()
