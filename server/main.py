@@ -101,7 +101,7 @@ async def main():
     # this is necessary for the user input code below
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, "localhost", 8080)
+    site = web.TCPSite(runner, "0.0.0.0", 8080)
     await site.start()
 
     # note: the type hint is for my editor"s autocomplete
