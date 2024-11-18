@@ -135,7 +135,7 @@ async def main():
                 server_status(ctx)
             elif command[0] == "exit":
                 print("Exiting...")
-                exit(0)
+                break
             elif command[0] == "shell":
                 await reverse_shell(ctx, command[1])
             else:

