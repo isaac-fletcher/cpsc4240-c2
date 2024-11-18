@@ -91,9 +91,23 @@ async def check(request: Request) -> Response:
 
     return web.json_response([command.as_dict() for command in commands])
 
+async def unregister(request: Request) -> Response:
+    id = request.match_info.get("id")
+    ctx: GlobalContext = request.app["ctx"]
+    
+    if id is None:
+        return web.Response(status=400)
+
+    commands = ctx.remove_bot(id)
+
+    if commands is None:
+        return web.Response(status=400)
+
+    return web.json_response([command.as_dict() for command in commands])
 
 ALL_ROUTES = [
     web.get('/init', init),
     web.get("/check/{id}", check),
+    web.get("/unregister/{id}", unregister),
     web.post("/result", result)
 ]

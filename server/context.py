@@ -33,6 +33,10 @@ class Command:
     def execute(interpreter: str, args: list[str]) -> "Command":
         return Command("execute", interpreter, args)
 
+    @staticmethod
+    def exit() -> "Command":
+        return Command("exit", [], [])
+
     def __init__(self, action: str, path: str, payload: str | list[str]) -> None:
         self.action = action
         self.path = path
@@ -70,17 +74,32 @@ class GlobalContext:
         while new_id in self._known_bots:
             new_id = _random_id()
 
-        self._known_bots[new_id] = (deque(), 0)
+        self._known_bots[new_id] = (deque(), 0, True)
 
         return new_id
+    
+    def remove_bot(self, id: str) -> list[Command] | None:
+        """
+        Removes a bot from the store and returns the queued commands.
+        """
+        if id not in self._known_bots:
+            None
+
+        queue, count, status = self._known_bots[id]
+        self._known_bots[id] = (queue, count, False)
+
+        commands = self.extract_commands(id)
+
+        return commands
 
     def command_all(self, command: Command) -> None:
         """
         Adds a command to the end of the command queue for every known bot.
         """
-        for queue, _ in self._known_bots.values():
-            self._commands_given += 1
-            queue.append(command)
+        for queue, count, status in self._known_bots.values():
+            if status == True:
+                self._commands_given += 1
+                queue.append(command)
 
     def command_one(self, id: str, command: Command) -> bool:
         """
@@ -117,8 +136,8 @@ class GlobalContext:
 
         This provides a way of distinguishing between the results for each command.
         """
-        queue, old_count = self._known_bots[id]
-        self._known_bots[id] = (queue, old_count + 1)
+        queue, old_count, status = self._known_bots[id]
+        self._known_bots[id] = (queue, old_count + 1, status)
 
         return old_count
 
@@ -128,11 +147,25 @@ class GlobalContext:
         """
         return len(self._known_bots)
 
-    def all_known_ids(self) -> Iterable[str]:
+    def active_bots(self) -> int:
+        """
+        Gets total number of active bots the server is aware of
+        """
+        return len([bot for bot in self._known_bots if self._known_bots[bot][2]])
+
+    def all_known_ids(self) -> Iterable[str: bool]:
         """
         Gets an iterator over all the known bot IDs
         """
         return self._known_bots.keys()
+
+    def bot_active(self, id: str) -> bool:
+        """
+        Retrusn the current status of `id`
+        """
+        status = self._known_bots[id][2]
+
+        return status
 
     def commands_given(self) -> int:
         """
