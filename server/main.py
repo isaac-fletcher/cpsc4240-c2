@@ -153,13 +153,13 @@ async def main():
                        "     exit\n"
                 ))
                 print(("Bot Payloads:\n\n"
-                       "  'run': Run command on remote system\n"
-                       "     run <shell> <command>\n\n"
+                       "  'execute': Run command on remote system\n"
+                       "     execute <shell> <command>\n\n"
                        "  'read': Read contents of remote file\n"
                        "     read <path>\n\n"
-                       "   'write': Upload local file to remote system\n"
+                       "  'write': Upload local file to remote system\n"
                        "     write <remote path> <local path>\n\n"
-                       "   'exit': Stop bot execution\n"
+                       "  'exit': Stop bot execution\n"
                        "     exit\n"   
                 ))
         
