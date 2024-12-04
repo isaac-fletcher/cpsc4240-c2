@@ -1,4 +1,4 @@
-# cpsc4240-c2
+# python-c2
 
 ## How to set up environment
 
